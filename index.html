@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0b0d10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Lists">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>My Lists</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1b1f26; --line:#242a33;
+  --fg:#e9ecf1; --muted:#8b929c; --accent:#3b82f6; --accent2:#1d4ed8; --danger:#ef4444;
+  --r:14px;
+}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
+  font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;overscroll-behavior-y:none}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+button{font:inherit;color:inherit;cursor:pointer}
+h1{font-size:26px;font-weight:650;margin:0;letter-spacing:-.02em}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+
+/* layout */
+#app{max-width:820px;margin:0 auto;padding:14px 14px 96px}
+.view{display:none}
+.view.on{display:block}
+.row{display:flex;align-items:center;gap:10px}
+.spread{display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+/* header */
+.topbar{display:flex;align-items:center;gap:12px;padding:6px 2px 14px}
+.iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--panel);
+  display:grid;place-items:center;font-size:18px;line-height:1;flex:0 0 auto;transition:background .18s ease}
+.iconbtn:active{background:var(--panel2)}
+
+/* cards */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.card .name{font-size:16.5px;font-weight:600;word-break:break-word}
+.card .count{font-size:24px;font-weight:500;letter-spacing:-.02em}
+.card .count small{font-size:12px;color:var(--muted);font-weight:400;margin-left:5px;letter-spacing:0}
+.card-main{flex:1;min-width:0;cursor:pointer}
+.card:active{background:var(--panel2)}
+
+/* buttons */
+.btn{border:1px solid var(--line);background:var(--panel);padding:10px 14px;border-radius:11px;
+  font-size:14px;font-weight:550;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+  transition:filter .15s ease,background .15s ease}
+.btn:active{filter:brightness(1.25)}
+.btn.p{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.p:active{background:var(--accent2)}
+.btn.d{border-color:#4a2226;color:#ff9a9a;background:#1e1416}
+.btn.ghost{background:transparent}
+.btn.sm{padding:7px 11px;font-size:13px;border-radius:10px}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.wide{width:100%;justify-content:center}
+.fab{width:56px;height:56px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:30px;
+  display:grid;place-items:center;box-shadow:0 6px 20px rgba(59,130,246,.32);transition:transform .12s ease}
+.fab:active{transform:scale(.94)}
+.tools{display:flex;flex-wrap:wrap;gap:8px}
+
+/* search */
+.searchwrap{position:relative;margin:4px 0 10px}
+.searchwrap input{padding-left:36px}
+input,textarea,select{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--fg);
+  border-radius:11px;padding:11px 12px;font:inherit;outline:none}
+input:focus,textarea:focus,select:focus{border-color:#38507d}
+textarea{min-height:150px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;
+  line-height:1.5;white-space:pre;overflow-wrap:normal;overflow-x:auto}
+.searchwrap .mag{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none}
+
+/* number rows */
+.nums{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
+.nrow{display:flex;align-items:center;gap:8px;padding:11px 12px;border-bottom:1px solid var(--line)}
+.nrow:last-child{border-bottom:none}
+.nrow .wa{flex:1;min-width:0;text-decoration:none;color:var(--fg);font-size:15px;display:flex;flex-direction:column;gap:1px}
+.nrow .wa:active{color:var(--accent)}
+.nrow .wa .n{letter-spacing:.01em}
+.nrow .acts{display:flex;gap:6px;flex:0 0 auto}
+
+/* pager */
+.pager{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0;flex-wrap:wrap}
+.pager .pg{font-size:13px;color:var(--muted)}
+
+/* dialog */
+.scrim{position:fixed;inset:0;background:rgba(4,6,9,.72);display:flex;align-items:flex-end;justify-content:center;
+  z-index:60;padding:0;animation:fade .14s ease}
+@media(min-width:620px){.scrim{align-items:center;padding:24px}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{background:var(--panel);border:1px solid var(--line);border-radius:18px 18px 0 0;width:100%;max-width:520px;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;animation:up .18s ease}
+@media(min-width:620px){.sheet{border-radius:18px}}
+@keyframes up{from{transform:translateY(14px);opacity:.5}to{transform:translateY(0);opacity:1}}
+.sheet h3{margin:0 0 4px;font-size:17px;font-weight:650}
+.sheet .sect{margin:14px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.sheet label{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 6px}
+.sheet .sbtns{display:flex;gap:8px;margin-top:16px}
+.sheet .sbtns .btn{flex:1;justify-content:center}
+.opt{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;cursor:pointer}
+.opt input{width:auto;accent-color:var(--accent)}
+.opt.on{border-color:#38507d;background:#101722}
+
+/* toast + progress */
+#toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+  background:#e9ecf1;color:#0b0d10;padding:10px 16px;border-radius:999px;font-size:13.5px;font-weight:600;opacity:0;
+  transition:opacity .18s ease,transform .18s ease;pointer-events:none;z-index:90;max-width:88vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.bar{height:6px;border-radius:999px;background:var(--panel2);overflow:hidden;margin-top:12px}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s ease}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.stat{flex:1 1 30%;background:var(--panel2);border-radius:11px;padding:10px 12px;min-width:96px}
+.stat b{display:block;font-size:20px;font-weight:550;letter-spacing:-.02em}
+.stat span{font-size:11.5px;color:var(--muted)}
+.empty{text-align:center;padding:56px 18px;color:var(--muted)}
+.empty .big{font-size:34px;margin-bottom:10px;opacity:.5}
+code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12.5px}
+.hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+table.exp{width:100%;border-collapse:collapse;font-size:13px}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ HOME ============ -->
+  <section id="v-home" class="view on">
+    <div class="spread" style="padding:6px 2px 16px">
+      <h1>My Lists</h1>
+      <div class="row" style="gap:10px">
+        <button class="iconbtn" id="cloud" title="Cloud backup (Firebase)" aria-label="Cloud backup">☁</button>
+        <button class="fab" id="newList" title="New list" aria-label="New list">+</button>
+      </div>
+    </div>
+    <div id="homeStat" class="small muted" style="padding:0 2px 10px"></div>
+    <div id="lists"></div>
+  </section>
+
+  <!-- ============ ONE LIST ============ -->
+  <section id="v-list" class="view">
+    <div class="topbar">
+      <button class="iconbtn" id="back" aria-label="Back">‹</button>
+      <div style="flex:1;min-width:0">
+        <div id="lName" class="name" style="font-size:19px;font-weight:640;letter-spacing:-.02em;word-break:break-word"></div>
+        <div id="lCount" class="small muted num"></div>
+      </div>
+      <button class="iconbtn" id="lRename" title="Rename" aria-label="Rename">✎</button>
+    </div>
+
+    <div class="tools" style="margin-bottom:12px">
+      <button class="btn p" id="addOne">＋ Add Number</button>
+      <button class="btn" id="addBulk">Bulk Add</button>
+      <button class="btn" id="exportList">Export</button>
+      <button class="btn d" id="delAll">Delete All</button>
+    </div>
+
+    <div class="searchwrap">
+      <span class="mag">⌕</span>
+      <input id="q" type="search" inputmode="tel" autocomplete="off" placeholder="Search number (any format)">
+    </div>
+    <div id="qInfo" class="small muted" style="margin:-4px 2px 8px"></div>
+
+    <div id="nums"></div>
+    <div id="pager" class="pager"></div>
+  </section>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   My Lists — phone/WhatsApp list manager
+   Storage: IndexedDB ("mylists"). The canonical number is the
+   PRIMARY KEY of the `numbers` store → a number physically
+   cannot exist twice anywhere in the app (global uniqueness).
+   ============================================================ */
+
+const PAGE = 100;      // rows rendered per page (pagination keeps the DOM tiny at 100k+ numbers)
+const CHUNK = 1000;    // write batch size for bulk import / move
+const SCAN_CAP = 200000; // hard cap for a non-prefix (substring) search walk
+
+/* ---------- tiny helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const fmtInt = n => Number(n || 0).toLocaleString("en-US");
+const chunk = (a, n) => { const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o; };
+const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+
+/* ---------- IndexedDB ---------- */
+const DB_NAME = "mylists", DB_VER = 1;
+let _db = null;
+function db() {
+  if (_db) return Promise.resolve(_db);
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, DB_VER);
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      if (!d.objectStoreNames.contains("lists")) {
+        const s = d.createObjectStore("lists", { keyPath: "id" });
+        s.createIndex("byName", "name");
+      }
+      if (!d.objectStoreNames.contains("numbers")) {
+        const s = d.createObjectStore("numbers", { keyPath: "n" });   // n = canonical number = global unique key
+        s.createIndex("byList", "listId");
+        s.createIndex("byListNum", ["listId", "n"]);                  // sorted + prefix search inside a list
+      }
+    };
+    r.onsuccess = () => { _db = r.result; res(_db); };
+    r.onerror = () => rej(r.error);
+  });
+}
+async function txDone(stores, mode, fn) {                // no awaits inside fn: only IndexedDB requests
+  const d = await db();
+  return new Promise((res, rej) => {
+    const t = d.transaction(stores, mode);
+    try { fn(t); } catch (e) { try { t.abort(); } catch (_) {} rej(e); return; }
+    t.oncomplete = () => res(true);
+    t.onerror = () => rej(t.error);
+    t.onabort = () => rej(t.error || new Error("transaction aborted"));
+  });
+}
+const getLists = () => db().then(d => req(d.transaction("lists").objectStore("lists").getAll()))
+  .then(a => (a || []).sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0)));
+const getList = id => db().then(d => req(d.transaction("lists").objectStore("lists").get(id)));
+const countIn = listId => {
+  const range = IDBKeyRange.bound([listId, ""], [listId, "\uffff"]);
+  return db().then(d => req(d.transaction("numbers").objectStore("numbers").index("byListNum").count(range)));
+};
+
+/* ============================================================
+   NUMBER NORMALISATION  (Indonesia-first, E.164 output)
+   ============================================================ */
+/* Soft normalisation for SEARCH: keeps partial digits usable. */
+function softNorm(q) {
+  let d = String(q || "").replace(/\D/g, "");
+  if (!d) return "";
+  if (d.startsWith("00")) d = d.slice(2);
+  if (d.startsWith("62")) return d;
+  if (d.startsWith("0")) return "62" + d.slice(1);
+  if (d.startsWith("8")) return "62" + d;
+  return d;
+}
+/* Strict normalisation for STORAGE. Returns canonical digits or null when invalid. */
+function canon(raw) {
+  let s = String(raw == null ? "" : raw).trim();
+  if (!s) return null;
+  if (/^[a-z]/i.test(s) && !/\d/.test(s)) return null;
+  const plus = /^\s*\+/.test(s) || /(^|\s)00/.test(s);
+  let d = s.replace(/\D/g, "");
+  if (!d) return null;
+  if (d.length > 20) {                                   // junk glued to the number: keep the plausible part
+    const m = d.match(/(?:62|0|8)\d{7,13}/); if (m) d = m[0]; else return null;
+  }
+  if (!/^(?:62|0|8|00)/.test(d)) {                       // local prefix (e.g. "12" before "0812...") → dig it out
+    const m = d.match(/(?:62|0|8)\d{7,13}/);
+    if (m) d = m[0];
+    else if (!plus || !/^\d{8,15}$/.test(d)) return null; // non-Indonesian numbers must carry a country code
+  }
+  if (d.startsWith("00")) d = d.slice(2);
+  if (d.startsWith("620")) d = "62" + d.slice(3);
+  if (!d.startsWith("62")) {
+    if (d.startsWith("0")) d = "62" + d.slice(1);
+    else if (d.startsWith("8")) d = "62" + d;
+  }
+  if (d.startsWith("62")) {                              // Indonesian mobile
+    const rest = d.slice(2);
+    if (!/^8\d{7,12}$/.test(rest)) return null;
+  } else {
+    if (!/^\d{8,15}$/.test(d)) return null;              // E.164
+  }
+  if (/^(\d)\1+$/.test(d)) return null;                  // 0000000 / 1111111
+  if (/^(?:62)?(?:0+|1234567\d*|9999+)$/.test(d)) return null;
+  return d;
+}
+/* Pretty display: +62 812-3456-7890 · +966 55 123 4567 */
+function pretty(n) {
+  n = String(n);
+  if (n.startsWith("62") && /^8\d{7,12}$/.test(n.slice(2))) {
+    const r = n.slice(2);                                // 8 + 7..12 digits
+    const a = r.slice(0, 3), b = r.slice(3, 7), c = r.slice(7);
+    return "+62 " + a + "-" + b + (c ? "-" + c : "");
+  }
+  return "+" + n;
+}
+const waLink = n => "https://wa.me/" + n;
+
+/* ============================================================
+   TOAST / DIALOGS
+   ============================================================ */
+let toastT;
+function toast(msg, ms) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), ms || 1800);
+}
+function dialog(html, wire) {
+  return new Promise(resolve => {
+    const scrim = document.createElement("div");
+    scrim.className = "scrim";
+    scrim.innerHTML = '<div class="sheet" role="dialog">' + html + "</div>";
+    document.body.appendChild(scrim);
+    const close = v => { scrim.remove(); resolve(v); };
+    scrim.addEventListener("click", e => {
+      const c = e.target.closest("[data-close]");
+      if (c) return close(null);
+      if (e.target === scrim) close(null);
+    });
+    const onEsc = e => { if (e.key === "Escape") { document.removeEventListener("keydown", onEsc); close(null); } };
+    document.addEventListener("keydown", onEsc);
+    if (wire) wire(scrim, close);
+    const f = scrim.querySelector("input,textarea"); if (f && window.innerWidth > 700) setTimeout(() => f.focus(), 60);
+  });
+}
+const btnRow = (ok, okId, cancel) =>
+  '<div class="sbtns"><button class="btn" data-close="1">' + esc(cancel || "Cancel") + '</button>' +
+  '<button class="btn p" id="' + okId + '">' + esc(ok) + "</button></div>";
+
+/* ============================================================
+   RENDER: HOME
+   ============================================================ */
+async function renderHome() {
+  const lists = await getLists();
+  // counts are always re-derived from the index (never trusted from a stored counter)
+  const fresh = await db().then(d => new Promise((res, rej) => {
+    const t = d.transaction("numbers");
+    const idx = t.objectStore("numbers").index("byList");
+    const out = {};
+    lists.forEach(l => req(idx.count(IDBKeyRange.only(l.id))).then(c => { out[l.id] = c; }, rej));
+    t.oncomplete = () => res(out);
+    t.onerror = () => rej(t.error);
+    setTimeout(() => res(out), 4000);
+  }));
+  const changed = lists.filter(l => (l.count || 0) !== (fresh[l.id] || 0));
+  if (changed.length) {
+    changed.forEach(l => { l.count = fresh[l.id] || 0; });
+    await txDone("lists", "readwrite", t => { const s = t.objectStore("lists"); changed.forEach(l => s.put(l)); });
+  }
+  const wrap = $("#lists");
+  let total = 0; lists.forEach(l => total += (l.count || 0));
+  $("#homeStat").textContent = lists.length
+    ? fmtInt(lists.length) + (lists.length === 1 ? " list" : " lists") + " · " + fmtInt(total) + " numbers"
+    : "";
+  if (!lists.length) {
+    wrap.innerHTML = '<div class="empty"><div class="big">＋</div><div style="margin-bottom:14px">No lists yet</div>' +
+      '<button class="btn p" id="createFirst">+ Create List</button></div>';
+    $("#createFirst").onclick = newList;
+    return;
+  }
+  wrap.innerHTML = lists.map(l => {
+    const id = esc(l.id), nm = esc(l.name);
+    return '<div class="card"><div class="row">' +
+      '<div class="card-main" data-open="' + id + '">' +
+        '<div class="name">' + nm + '</div>' +
+        '<div class="count num">' + fmtInt(l.count) + '<small>' + (l.count === 1 ? "number" : "numbers") + "</small></div>" +
+      "</div>" +
+      '<button class="btn sm ghost" data-rn="' + id + '">Rename</button>' +
+      '<button class="btn sm d" data-dl="' + id + '">Delete</button>' +
+      "</div></div>";
+  }).join("");
+}
+
+/* ============================================================
+   LIST CRUD
+   ============================================================ */
+async function newList() {
+  const name = await dialog(
+    "<h3>New List</h3>" +
+    '<label>List name</label><input id="nm" placeholder="e.g. Restaurants" maxlength="80" autocomplete="off">' +
+    btnRow("Create", "ok"),
+    (s, close) => {
+      s.querySelector("#ok").onclick = () => {
+        const v = s.querySelector("#nm").value.trim();
+        if (!v) { toast("Enter a list name"); return; }
+        close(v);
+      };
+      s.querySelector("#nm").addEventListener("keydown", e => { if (e.key === "Enter") s.querySelector("#ok").click(); });
+    });
+  if (!name) return;
+  const rec = { id: uid(), name: name, count: 0, createdAt: Date.now() };
+  await txDone("lists", "readwrite", t => t.objectStore("lists").put(rec));
+  await renderHome(); toast("List created");
+}
+async function renameList(id) {
+  const l = await getList(id); if (!l) return;
+  const name = await dialog(
+    "<h3>Rename list</h3>" +
+    '<label>List name</label><input id="nm" value="' + esc(l.name) + '" maxlength="80" autocomplete="off">' +
+    btnRow("Save", "ok"),
+    (s, close) => {
+      s.querySelector("#ok").onclick = () => { const v = s.querySelector("#nm").value.trim(); if (!v) return; close(v); };
+      s.querySelector("#nm").addEventListener("keydown", e => { if (e.key === "Enter") s.querySelector("#ok").click(); });
+    });
+  if (!name) return;
+  l.name = name;
+  await txDone("lists", "readwrite", t => t.objectStore("lists").put(l));
+  if (S.view === "list" && S.listId === id) { $("#lName").textContent = name; }
+  await renderHome(); toast("Renamed");
+}
+async function deleteList(id) {
+  const l = await getList(id); if (!l) return;
+  const n = await countIn(id);
+  const ok = await dialog(
+    "<h3>Delete list?</h3><p class='muted' style='margin:6px 0 0'>“" + esc(l.name) + "” and its " + fmtInt(n) +
+    " number" + (n === 1 ? "" : "s") + " will be permanently deleted.</p>" +
+    '<div class="sbtns"><button class="btn" data-close="1">Cancel</button><button class="btn d" id="ok">Delete</button></div>',
+    (s, close) => { s.querySelector("#ok").onclick = () => close(true); });
+  if (!ok) return;
+  const range = IDBKeyRange.bound([id, ""], [id, "\uffff"]);
+  const d = await db();
+  await new Promise((res, rej) => {                       // collect keys of this list, then delete them
+    const t = d.transaction("numbers", "readwrite");
+    const st = t.objectStore("numbers");
+    req(st.index("byListNum").getAllKeys(range)).then(keys => { keys.forEach(k => st.delete(k)); }, rej);
+    t.oncomplete = res; t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+  });
+  await txDone("lists", "readwrite", t => t.objectStore("lists").delete(id));
+  if (S.listId === id) openList(null);
+  await renderHome(); toast("List deleted");
+}
+
+/* ============================================================
+   LIST VIEW STATE + RENDER
+   ============================================================ */
+const S = { view: "home", listId: null, q: "", page: 1, total: 0, scan: null, timer: null };
+
+function openList(id) {
+  S.listId = id; S.q = ""; S.page = 1; S.scan = null;
+  if (!id) { S.view = "home"; showView(); location.hash = ""; return; }
+  S.view = "list"; showView(); location.hash = "#list=" + encodeURIComponent(id);
+  $("#q").value = "";
+  renderList();
+}
+function showView() {
+  $("#v-home").classList.toggle("on", S.view === "home");
+  $("#v-list").classList.toggle("on", S.view === "list");
+  window.scrollTo(0, 0);
+}
+async function renderList() {
+  const l = await getList(S.listId);
+  if (!l) { openList(null); return; }
+  $("#lName").textContent = l.name;
+  const live = await countIn(l.id);
+  if (live !== (l.count || 0)) {
+    l.count = live; await txDone("lists", "readwrite", t => t.objectStore("lists").put(l));
+    renderHome();
+  }
+  S.total = live;
+  $("#lCount").textContent = fmtInt(live) + (live === 1 ? " number" : " numbers");
+  await renderNums();
+}
+/* Collect one page: pagination/prefix search go through the index;
+   a non-prefix query falls back to a bounded substring walk. */
+function collect(listId, offset, limit, range, test) {
+  return db().then(d => new Promise((res, rej) => {
+    const idx = d.transaction("numbers").objectStore("numbers").index("byListNum");
+    const out = []; let seen = 0, advanced = offset <= 0;
+    const r = idx.openCursor(range);
+    r.onerror = () => rej(r.error);
+    r.onsuccess = () => {
+      const c = r.result;
+      if (!c) return res(out);
+      if (!advanced) { advanced = true; if (offset > 0) return c.advance(offset); }
+      const v = c.value;
+      if (!test || test(v.n)) out.push(v);
+      if (out.length >= limit) return res(out);
+      seen++;
+      if (seen > SCAN_CAP) return res(out);
+      c.continue();
+    };
+  }));
+}
+async function renderNums() {
+  const id = S.listId, q = S.q.trim();
+  const pfx = softNorm(q);
+  const digits = (pfx || q).replace(/\D/g, "");
+  const rangeAll = IDBKeyRange.bound([id, ""], [id, "\uffff"]);
+  const rangePfx = digits ? IDBKeyRange.bound([id, pfx], [id, pfx + "\uffff"]) : null;
+  const countIdx = r => db().then(d => req(d.transaction("numbers").objectStore("numbers").index("byListNum").count(r)));
+  let rows = [], count = 0, scanned = false, total = 0;
+
+  if (!q) {
+    rows = await collect(id, (S.page - 1) * PAGE, PAGE, rangeAll, null);
+    count = total = S.total;
+  } else if (rangePfx) {
+    count = await countIdx(rangePfx);                       // indexed: instant even at 100k+
+    if (count === 0 && digits.length >= 3) {
+      const hits = await collect(id, 0, SCAN_CAP, rangeAll, n => n.includes(digits));
+      scanned = true; count = hits.length;
+      rows = hits.slice((S.page - 1) * PAGE, (S.page - 1) * PAGE + PAGE);
+    } else {
+      rows = await collect(id, (S.page - 1) * PAGE, PAGE, rangePfx, null);
+    }
+  } else {
+    const needle = q.toLowerCase();
+    const hits = await collect(id, 0, SCAN_CAP, rangeAll, n => n.includes(needle));
+    scanned = true; count = hits.length;
+    rows = hits.slice((S.page - 1) * PAGE, (S.page - 1) * PAGE + PAGE);
+  }
+
+  const host = $("#nums");
+  if (!rows.length) {
+    host.innerHTML = '<div class="empty">' + (q ? "No match for “" + esc(q) + "”" : "No numbers yet") + "</div>";
+  } else {
+    host.innerHTML = '<div class="nums">' + rows.map(v =>
+      '<div class="nrow">' +
+        '<a class="wa" href="' + waLink(v.n) + '" target="_blank" rel="noopener">' +
+          '<span class="n num">' + esc(pretty(v.n)) + "</span>" +
+        "</a>" +
+        '<div class="acts">' +
+          '<button class="btn sm ghost" data-mv="' + esc(v.n) + '" title="Move to another list">Move</button>' +
+          '<button class="btn sm d" data-del="' + esc(v.n) + '" title="Delete">✕</button>' +
+        "</div>" +
+      "</div>").join("") + "</div>";
+  }
+  const pages = Math.max(1, Math.ceil(count / PAGE));
+  if (S.page > pages) S.page = pages;
+  $("#pager").innerHTML = (pages > 1)
+    ? '<button class="btn sm" data-pg="-1"' + (S.page <= 1 ? " disabled" : "") + '>‹ Prev</button>' +
+      '<span class="pg num">Page ' + S.page + " / " + fmtInt(pages) + "</span>" +
+      '<button class="btn sm" data-pg="1"' + (S.page >= pages ? " disabled" : "") + ">Next ›</button>"
+    : "";
+  $("#qInfo").textContent = q
+    ? fmtInt(count) + " result" + (count === 1 ? "" : "s") + (scanned ? " · matched anywhere in the number" : "")
+    : (total ? fmtInt(total) + " numbers · sorted · tap to open WhatsApp" : "");
+}
+
+/* ============================================================
+   ADD ONE NUMBER
+   ============================================================ */
+async function addOne() {
+  const id = S.listId;
+  const val = await dialog(
+    "<h3>Add Number</h3>" +
+    '<label>Phone number</label><input id="nm" inputmode="tel" placeholder="0812 3456 7890 or +62 812-3456-7890" autocomplete="off">' +
+    '<div class="hint">Formatting is cleaned automatically (0812… = +62 812…). Duplicates are rejected across all lists.</div>' +
+    btnRow("Save", "ok", "Cancel"),
+    (s, close) => {
+      s.querySelector("#ok").onclick = () => { const v = s.querySelector("#nm").value.trim(); if (!v) { toast("Enter a number"); return; } close(v); };
+      s.querySelector("#nm").addEventListener("keydown", e => { if (e.key === "Enter") s.querySelector("#ok").click(); });
+    });
+  if (!val) return;
+  const n = canon(val);
+  if (!n) { toast("Invalid number"); return; }
+  const d = await db();
+  const exists = await req(d.transaction("numbers").objectStore("numbers").get(n));
+  if (exists) {
+    const owner = await getList(exists.listId);
+    await dialog("<h3>Already exists</h3><p class=\"muted\" style=\"margin:6px 0 0\">" + esc(pretty(n)) +
+      " is already in “" + esc(owner ? owner.name : "another list") + "”. A number can only exist once." +
+      '<div class="sbtns"><button class="btn p" data-close="1">OK</button></div>');
+    return;
+  }
+  await txDone("numbers", "readwrite", t => t.objectStore("numbers").put({ n: n, listId: id, raw: val, addedAt: Date.now() }));
+  toast("Added " + pretty(n));
+  S.page = 1;
+  await renderList();
+}
+
+/* ============================================================
+   BULK ADD  (hundreds / thousands at once, global dedupe)
+   ============================================================ */
+function extractCandidates(line) {
+  const out = [];
+  const re = /\+?\d[\d\s\-.()\u00a0]{3,}\d/g;
+  let m;
+  while ((m = re.exec(line))) out.push(m[0]);
+  if (!out.length) { const d = line.replace(/\D/g, ""); if (d) out.push(d); }
+  return out;
+}
+async function bulkAdd() {
+  const id = S.listId;
+  const text = await dialog(
+    "<h3>Bulk Add</h3>" +
+    '<label>Paste numbers (one per line, or separated by comma / space / tab)</label>' +
+    '<textarea id="ta" placeholder="081234567890\n+62 812-3456-7890\n0812 9988 7766"></textarea>' +
+    '<div class="row" style="margin-top:8px"><input type="file" id="file" accept=".txt,.csv,.tsv,text/*" style="padding:8px"></div>' +
+    '<div class="hint">Thousands are fine. Numbers are cleaned, checked against <b>every</b> list, duplicates and invalid entries are skipped.</div>' +
+    btnRow("Import", "ok", "Cancel"),
+    (s, close) => {
+      s.querySelector("#file").addEventListener("change", e => {
+        const f = e.target.files[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = () => { const ta = s.querySelector("#ta"); ta.value = (ta.value ? ta.value + "\n" : "") + String(r.result); };
+        r.readAsText(f);
+      });
+      s.querySelector("#ok").onclick = () => { const v = s.querySelector("#ta").value; if (!v.trim()) { toast("Paste some numbers"); return; } close(v); };
+    });
+  if (!text) return;
+  await runImport(id, text);
+}
+async function runImport(listId, text) {
+  const lines = text.split(/\r?\n/);
+  const seen = new Set(); const valid = []; let invalid = 0, dupInBatch = 0;
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    let ok = 0;
+    for (const cand of extractCandidates(line)) {
+      const n = canon(cand);
+      if (!n) continue;
+      ok++;
+      if (seen.has(n)) { dupInBatch++; continue; }  // duplicate already present in the pasted text
+      seen.add(n); valid.push({ n: n, raw: cand.trim() });
+    }
+    if (!ok) invalid++;
+  }
+  const d = await db();
+  const existing = new Set(await req(d.transaction("numbers").objectStore("numbers").getAllKeys()));
+  const fresh = [], dupes = [];
+  for (const v of valid) (existing.has(v.n) ? dupes : fresh).push(v);
+  const dupTotal = dupes.length + dupInBatch;
+
+  const scrim = document.createElement("div");
+  scrim.className = "scrim";
+  scrim.innerHTML = '<div class="sheet"><h3>Importing…</h3><div class="bar"><i id="bar"></i></div>' +
+    '<div class="small muted" id="prog" style="margin-top:8px">0 / ' + fmtInt(fresh.length) + "</div></div>";
+  document.body.appendChild(scrim);
+  const bar = scrim.querySelector("#bar"), prog = scrim.querySelector("#prog");
+  const batches = chunk(fresh, CHUNK);
+  for (let i = 0; i < batches.length; i++) {
+    const b = batches[i];
+    await txDone("numbers", "readwrite", t => {
+      const st = t.objectStore("numbers");
+      for (const v of b) st.put({ n: v.n, listId: listId, raw: v.raw, addedAt: Date.now() });
+    });
+    const p = Math.round(((i + 1) / Math.max(1, batches.length)) * 100);
+    bar.style.width = p + "%"; prog.textContent = fmtInt(Math.min((i + 1) * CHUNK, fresh.length)) + " / " + fmtInt(fresh.length);
+  }
+  scrim.remove();
+  await renderList(); await renderHome();
+
+  await dialog(
+    "<h3>Import Complete</h3>" +
+    '<div class="stats">' +
+      '<div class="stat"><b class="num">' + fmtInt(fresh.length) + "</b><span>Added</span></div>" +
+      '<div class="stat"><b class="num">' + fmtInt(dupTotal) + "</b><span>Duplicates skipped</span></div>" +
+      '<div class="stat"><b class="num">' + fmtInt(invalid) + "</b><span>Invalid numbers</span></div>" +
+    "</div>" +
+    '<div class="hint">Duplicates were checked across every list, not only this one.</div>' +
+    '<div class="sbtns"><button class="btn p" data-close="1">Done</button></div>');
+}
+
+/* ============================================================
+   MOVE / DELETE A NUMBER
+   ============================================================ */
+async function moveNumber(n) {
+  const lists = await getLists();
+  const others = lists.filter(l => l.id !== S.listId);
+  if (!others.length) { toast("No other list — create one first"); return; }
+  const rec = await db().then(d => req(d.transaction("numbers").objectStore("numbers").get(n)));
+  if (!rec) return;
+  const target = await dialog(
+    "<h3>Move number</h3><p class='muted num' style='margin:6px 0 2px;font-size:16px'>" + esc(pretty(n)) + "</p>" +
+    '<div class="hint" style="margin-bottom:10px">Moving never creates a duplicate — the number stays unique.</div>' +
+    others.map(l => '<label class="opt"><input type="radio" name="tgt" value="' + esc(l.id) + '"><span>' + esc(l.name) +
+      ' <span class="muted small">· ' + fmtInt(l.count) + "</span></span></label>").join("") +
+    btnRow("Move", "ok"),
+    (s, close) => {
+      s.querySelectorAll(".opt").forEach(o => o.addEventListener("click", () => {
+        s.querySelectorAll(".opt").forEach(x => x.classList.remove("on")); o.classList.add("on");
+        o.querySelector("input").checked = true;
+      }));
+      s.querySelector("#ok").onclick = () => {
+        const c = s.querySelector('input[name="tgt"]:checked');
+        if (!c) { toast("Pick a list"); return; }
+        close(c.value);
+      };
+    });
+  if (!target) return;
+  rec.listId = target;
+  await txDone("numbers", "readwrite", t => t.objectStore("numbers").put(rec));
+  await renderList(); await renderHome();
+  const l = await getList(target);
+  toast("Moved to " + (l ? l.name : "list"));
+}
+async function deleteNumber(n) {
+  const ok = await dialog(
+    "<h3>Delete number?</h3><p class='muted num' style='margin:6px 0 0;font-size:16px'>" + esc(pretty(n)) + "</p>" +
+    '<div class="sbtns"><button class="btn" data-close="1">Cancel</button><button class="btn d" id="ok">Delete</button></div>',
+    (s, close) => { s.querySelector("#ok").onclick = () => close(true); });
+  if (!ok) return;
+  await txDone("numbers", "readwrite", t => t.objectStore("numbers").delete(n));
+  await renderList(); await renderHome(); toast("Deleted");
+}
+async function deleteAll() {
+  const l = await getList(S.listId);
+  const n = await countIn(S.listId);
+  const ok = await dialog(
+    "<h3>Are you sure?</h3><p class='muted' style='margin:6px 0 0'>This will permanently delete all " + fmtInt(n) +
+    " numbers in “" + esc(l ? l.name : "") + "”.</p>" +
+    '<div class="sbtns"><button class="btn" data-close="1">Cancel</button><button class="btn d" id="ok">Delete All</button></div>',
+    (s, close) => { s.querySelector("#ok").onclick = () => close(true); });
+  if (!ok) return;
+  const range = IDBKeyRange.bound([S.listId, ""], [S.listId, "\uffff"]);
+  const d = await db();
+  await new Promise((res, rej) => {
+    const t = d.transaction("numbers", "readwrite"); const st = t.objectStore("numbers");
+    req(st.index("byListNum").getAllKeys(range)).then(keys => keys.forEach(k => st.delete(k)), rej);
+    t.oncomplete = res; t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+  });
+  S.page = 1;
+  await renderList(); await renderHome(); toast("All numbers deleted");
+}
+
+/* ============================================================
+   EXPORT / BACKUP
+   ============================================================ */
+async function exportData() {
+  const l = await getList(S.listId);
+  const scope = await dialog(
+    "<h3>Export</h3><div class='sect'>What</div>" +
+    '<label class="opt on"><input type="radio" name="sc" value="one" checked><span>Current list <span class="muted small">· ' + esc(l.name) + "</span></span></label>" +
+    '<label class="opt"><input type="radio" name="sc" value="all"><span>All lists</span></label>' +
+    '<div class="sect">Format</div>' +
+    '<label class="opt on"><input type="radio" name="fm" value="csv" checked><span>CSV <span class="muted small">· opens in Excel</span></span></label>' +
+    '<label class="opt"><input type="radio" name="fm" value="xls"><span>Excel (.xls)</span></label>' +
+    '<label class="opt"><input type="radio" name="fm" value="txt"><span>TXT <span class="muted small">· one number per line</span></span></label>' +
+    '<label class="opt"><input type="radio" name="fm" value="json"><span>JSON backup <span class="muted small">· full restore</span></span></label>' +
+    btnRow("Export", "ok"),
+    (s, close) => {
+      s.querySelectorAll(".opt").forEach(o => o.addEventListener("click", () => {
+        const inp = o.querySelector("input"); const grp = inp.name;
+        s.querySelectorAll('input[name="' + grp + '"]').forEach(i => i.closest(".opt").classList.remove("on"));
+        o.classList.add("on"); inp.checked = true;
+      }));
+      s.querySelector("#ok").onclick = () => close({
+        sc: s.querySelector('input[name="sc"]:checked').value,
+        fm: s.querySelector('input[name="fm"]:checked').value
+      });
+    });
+  if (!scope) return;
+  toast("Preparing…", 60000);
+  const d = await db();
+  const lists = scope.sc === "one" ? [l] : await getLists();
+  const rows = [];
+  for (const L of lists) {
+    const range = IDBKeyRange.bound([L.id, ""], [L.id, "\uffff"]);
+    await new Promise((res, rej) => {
+      const idx = d.transaction("numbers").objectStore("numbers").index("byListNum");
+      const r = idx.openCursor(range);
+      r.onerror = () => rej(r.error);
+      r.onsuccess = () => { const c = r.result; if (!c) return res(); rows.push(Object.assign({ list: L.name }, c.value)); c.continue(); };
+    });
+  }
+  const stamp = new Date().toISOString().slice(0, 10);
+  const base = (scope.sc === "one" ? l.name.replace(/[^\w\-]+/g, "_") || "list" : "my-lists") + "-" + stamp;
+  let blob, fname = base, mime = "text/plain;charset=utf-8";
+  const keep = rows.filter(r => r.n);
+  if (scope.fm === "txt") {
+    fname += ".txt";
+    blob = new Blob([scope.sc === "one" ? keep.map(r => pretty(r.n)).join("\n") : keep.map(r => r.list + "\t" + pretty(r.n)).join("\n")], { type: mime });
+  } else if (scope.fm === "csv") {
+    fname += ".csv"; mime = "text/csv;charset=utf-8";
+    const q = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+    const head = "list,number,local_format,added_at\n";
+    blob = new Blob(["\ufeff" + head + keep.map(r =>
+      [q(r.list), q(r.n), q(pretty(r.n)), q(r.addedAt ? new Date(r.addedAt).toISOString() : "")].join(",")).join("\n")], { type: mime });
+  } else if (scope.fm === "xls") {
+    fname += ".xls"; mime = "application/vnd.ms-excel";
+    const td = v => "<td>" + esc(v) + "</td>";
+    blob = new Blob(["\ufeff<table><tr><th>list</th><th>number</th><th>local_format</th><th>added_at</th></tr>" +
+      keep.map(r => "<tr>" + td(r.list) + td(r.n) + td(pretty(r.n)) + td(r.addedAt ? new Date(r.addedAt).toISOString() : "") + "</tr>").join("") +
+      "</table>"], { type: mime });
+  } else {
+    fname += ".json"; mime = "application/json";
+    const all = await getLists();
+    const nums = [];
+    await new Promise((res, rej) => {
+      const r = d.transaction("numbers").objectStore("numbers").openCursor();
+      r.onerror = () => rej(r.error);
+      r.onsuccess = () => { const c = r.result; if (!c) return res(); nums.push(c.value); c.continue(); };
+    });
+    blob = new Blob([JSON.stringify({ app: "my-lists", version: 1, exportedAt: new Date().toISOString(), lists: all, numbers: nums }, null, 1)], { type: mime });
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = fname; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 4000);
+  toast("Exported " + fmtInt(scope.fm === "json" ? rows.length : keep.length) + " numbers");
+}
+
+/* ============================================================
+   CLOUD (Firebase Firestore REST + anonymous auth, no SDK)
+   IndexedDB stays the source of truth for speed/offline use;
+   Firestore is the durable cross-device mirror. A number can
+   live only once in Firestore too: its document id IS the
+   canonical number, and the rules reject any other shape.
+   ============================================================ */
+const FB = { apiKey: "AIzaSyDlgm1ewL_XZnCUReJ1EvL9Rc8q9y7O7qE", projectId: "cool-b788e" };
+const FS_BASE = "https://firestore.googleapis.com/v1/projects/" + FB.projectId + "/databases/(default)/documents";
+const FS_DOC = "projects/" + FB.projectId + "/databases/(default)/documents";
+const RT_KEY = "mylists.cloud.refreshToken";
+const CLOUD = { token: null, exp: 0 };
+
+function fsFields(o) {
+  const f = {};
+  for (const k in o) {
+    const v = o[k];
+    if (typeof v === "number" && Number.isFinite(v)) f[k] = { integerValue: String(Math.round(v)) };
+    else if (typeof v === "boolean") f[k] = { booleanValue: v };
+    else if (v == null) f[k] = { nullValue: null };
+    else f[k] = { stringValue: String(v) };
+  }
+  return f;
+}
+function fsRead(doc) {
+  const o = {}; const f = doc.fields || {};
+  for (const k in f) {
+    const v = f[k];
+    o[k] = "stringValue" in v ? v.stringValue : "integerValue" in v ? Number(v.integerValue)
+      : "booleanValue" in v ? v.booleanValue : null;
+  }
+  return o;
+}
+async function httpJson(url, opts) {
+  const r = await fetch(url, opts);
+  const t = await r.text();
+  let j = null; try { j = t ? JSON.parse(t) : null; } catch (_) {}
+  if (!r.ok) {
+    const msg = (j && j.error && (j.error.message || j.error.status)) || ("HTTP " + r.status);
+    const err = new Error(msg); err.status = r.status; err.body = j; throw err;
+  }
+  return j;
+}
+/* ---- auth (anonymous: no login screen, no account) ---- */
+async function cloudToken() {
+  if (CLOUD.token && Date.now() < CLOUD.exp) return CLOUD.token;
+  const rt = localStorage.getItem(RT_KEY);
+  if (rt) {
+    try {
+      const j = await httpJson("https://securetoken.googleapis.com/v1/token?key=" + FB.apiKey, {
+        method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(rt)
+      });
+      CLOUD.token = j.id_token; CLOUD.exp = Date.now() + (Number(j.expires_in || 3600) - 120) * 1000;
+      return CLOUD.token;
+    } catch (_) { localStorage.removeItem(RT_KEY); }
+  }
+  const j = await httpJson("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=" + FB.apiKey, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ returnSecureToken: true })
+  });
+  localStorage.setItem(RT_KEY, j.refreshToken);
+  CLOUD.token = j.idToken; CLOUD.exp = Date.now() + (Number(j.expiresIn || 3600) - 120) * 1000;
+  return CLOUD.token;
+}
+function cloudError(e) {
+  const m = String((e && e.message) || e);
+  if (/CONFIGURATION_NOT_FOUND|OPERATION_NOT_ALLOWED/i.test(m))
+    return "Cloud not enabled: turn on Anonymous sign-in in Firebase → Authentication → Sign-in method.";
+  if (/PERMISSION_DENIED|insufficient permissions/i.test(m))
+    return "Firestore rules blocked it: publish the My Lists rules in Firebase → Firestore → Rules.";
+  if (/Failed to fetch|NetworkError|load failed/i.test(m)) return "No connection to Firebase.";
+  return "Cloud error: " + m;
+}
+/* ---- push / pull ---- */
+async function cloudPush(onProg) {
+  const tok = await cloudToken();
+  const auth = { "Authorization": "Bearer " + tok, "Content-Type": "application/json" };
+  const lists = await getLists();
+  let written = 0;
+  const lw = lists.map(l => ({ update: { name: FS_DOC + "/lists/" + l.id, fields: fsFields({ name: l.name, count: l.count || 0, createdAt: l.createdAt || Date.now() }) } }));
+  for (const b of chunk(lw, 450)) {
+    await httpJson(FS_BASE + ":commit", { method: "POST", headers: auth, body: JSON.stringify({ writes: b }) });
+  }
+  const d = await db();
+  const keys = await req(d.transaction("numbers").objectStore("numbers").getAll());
+  const total = keys.length;
+  for (const b of chunk(keys, 450)) {
+    const writes = b.map(v => ({
+      update: { name: FS_DOC + "/numbers/" + v.n, fields: fsFields({ listId: v.listId, raw: v.raw || "", addedAt: v.addedAt || 0, local: pretty(v.n) }) }
+    }));
+    await httpJson(FS_BASE + ":commit", { method: "POST", headers: auth, body: JSON.stringify({ writes: writes }) });
+    written += b.length;
+    if (onProg) onProg(written, total);
+  }
+  localStorage.setItem("mylists.cloud.lastPush", String(Date.now()));
+  return { lists: lists.length, numbers: written };
+}
+async function fsListAll(auth, col) {
+  const out = []; let page = "";
+  do {
+    const url = FS_BASE + "/" + col + "?pageSize=300" + (page ? "&pageToken=" + encodeURIComponent(page) : "");
+    const j = await httpJson(url, { headers: auth });
+    (j.documents || []).forEach(d => out.push({ id: String(d.name).split("/").pop(), data: fsRead(d) }));
+    page = j.nextPageToken || "";
+  } while (page);
+  return out;
+}
+async function cloudPull(onProg) {
+  const tok = await cloudToken();
+  const auth = { "Authorization": "Bearer " + tok };
+  const rLists = await fsListAll(auth, "lists");
+  const rNums = await fsListAll(auth, "numbers");
+  let addedLists = 0, addedNums = 0, skipped = 0;
+  const local = await getLists();
+  const byId = new Map(local.map(l => [l.id, l]));
+  const newLists = [];
+  for (const r of rLists) {
+    if (!byId.has(r.id)) newLists.push({ id: r.id, name: r.data.name || "List", count: 0, createdAt: r.data.createdAt || Date.now() });
+  }
+  if (newLists.length) {
+    addedLists = newLists.length;
+    await txDone("lists", "readwrite", t => { const s = t.objectStore("lists"); newLists.forEach(l => s.put(l)); });
+  }
+  const d = await db();
+  const existing = new Set(await req(d.transaction("numbers").objectStore("numbers").getAllKeys()));
+  const valid = rNums.map(r => ({ n: r.id, listId: r.data.listId, raw: r.data.raw || "", addedAt: r.data.addedAt || 0 }))
+    .filter(r => canon(r.n) === r.n && !existing.has(r.n));
+  for (const r of valid) if (!r.listId) skipped++;
+  const usable = valid.filter(r => r.listId);
+  const knownLists = new Set((await getLists()).map(l => l.id));
+  const orphan = usable.filter(r => !knownLists.has(r.listId));
+  for (const b of chunk(usable, 1000)) {
+    await txDone("numbers", "readwrite", t => { const s = t.objectStore("numbers"); b.forEach(v => s.put(v)); });
+    addedNums += b.length;
+    if (onProg) onProg(addedNums, usable.length);
+  }
+  localStorage.setItem("mylists.cloud.lastPull", String(Date.now()));
+  await renderHome();
+  return { addedLists, addedNums, skipped, orphans: orphan.length, remoteLists: rLists.length, remoteNumbers: rNums.length };
+}
+async function cloudDialog() {
+  await dialog(
+    "<h3>Cloud · Firebase</h3><p class='small muted' style='margin:6px 0 0'>Project " + FB.projectId +
+    ". Local library stays the fast copy; Firebase is the durable mirror (project " + FB.projectId + ").</p>" +
+    '<div class="sect">What</div>' +
+    '<div class="tools"><button class="btn p" id="push">Back up to cloud</button>' +
+    '<button class="btn" id="pull">Restore from cloud</button></div>' +
+    '<div class="small muted" id="cstat" style="margin-top:10px">Checking connection…</div>' +
+    '<div class="bar" id="cbar" style="display:none"><i></i></div>' +
+    '<div class="sbtns"><button class="btn" data-close="1">Close</button></div>',
+    (s, close) => {
+      const st = s.querySelector("#cstat"), bar = s.querySelector("#cbar"), fill = bar.querySelector("i");
+      const db2 = async () => {
+        const d = await db();
+        const n = await req(d.transaction("numbers").objectStore("numbers").count());
+        const l = (await getLists()).length;
+        return l + " lists · " + fmtInt(n) + " numbers on this device";
+      };
+      (async () => { st.textContent = await db2(); })();
+      const run = async (fn, label) => {
+        s.querySelector("#push").disabled = s.querySelector("#pull").disabled = true;
+        bar.style.display = "block"; fill.style.width = "5%";
+        st.textContent = label;
+        try {
+          const res = await fn((a, b) => { fill.style.width = Math.max(5, Math.round((a / Math.max(1, b)) * 100)) + "%"; st.textContent = label + " " + fmtInt(a) + " / " + fmtInt(b); });
+          fill.style.width = "100%";
+          st.textContent = label + " done — " + JSON.stringify(res);
+        } catch (e) {
+          fill.style.width = "0"; st.textContent = cloudError(e);
+        }
+        s.querySelector("#push").disabled = s.querySelector("#pull").disabled = false;
+      };
+      s.querySelector("#push").onclick = () => run(cloudPush, "Uploading");
+      s.querySelector("#pull").onclick = () => run(cloudPull, "Downloading");
+    });
+}
+
+/* ============================================================
+   EVENTS
+   ============================================================ */
+$("#newList").onclick = newList;
+$("#cloud").onclick = cloudDialog;
+$("#back").onclick = () => { openList(null); renderHome(); };
+$("#lRename").onclick = () => renameList(S.listId);
+$("#addOne").onclick = addOne;
+$("#addBulk").onclick = bulkAdd;
+$("#exportList").onclick = exportData;
+$("#delAll").onclick = deleteAll;
+
+$("#lists").addEventListener("click", e => {
+  const o = e.target.closest("[data-open]"); if (o) return openList(o.dataset.open);
+  const r = e.target.closest("[data-rn]"); if (r) return renameList(r.dataset.rn);
+  const x = e.target.closest("[data-dl]"); if (x) return deleteList(x.dataset.dl);
+});
+$("#nums").addEventListener("click", e => {
+  const m = e.target.closest("[data-mv]"); if (m) return moveNumber(m.dataset.mv);
+  const x = e.target.closest("[data-del]"); if (x) return deleteNumber(x.dataset.del);
+});
+$("#pager").addEventListener("click", e => {
+  const b = e.target.closest("[data-pg]"); if (!b) return;
+  S.page = Math.max(1, S.page + Number(b.dataset.pg));
+  window.scrollTo(0, 0);
+  renderNums();
+});
+$("#q").addEventListener("input", e => {
+  S.q = e.target.value; S.page = 1;
+  clearTimeout(S.timer); S.timer = setTimeout(renderNums, 160);
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  S.view === "list" ? renderList() : renderHome();
+});
+window.addEventListener("hashchange", () => {
+  const m = /^#list=(.+)$/.exec(location.hash);
+  if (m && decodeURIComponent(m[1]) !== S.listId) openList(decodeURIComponent(m[1]));
+  else if (!m && S.listId) openList(null);
+});
+
+/* ---------- boot ---------- */
+(async function boot() {
+  await db();
+  await renderHome();
+  const m = /^#list=(.+)$/.exec(location.hash);
+  if (m) {
+    const id = decodeURIComponent(m[1]);
+    if (await getList(id)) openList(id); else location.hash = "";
+  }
+})();
+</script>
+<div id="toast"></div>
+</body>
+</html>

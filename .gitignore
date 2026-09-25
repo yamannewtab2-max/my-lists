@@ -1,1 +1,2 @@
-.vercel
+collect/out/
+__pycache__/
